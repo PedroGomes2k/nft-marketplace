@@ -8,6 +8,12 @@ import "./index.css"
 
 const queryClient = new QueryClient()
 
+async function enableMocking() {
+  if (import.meta.env.VITE_ENABLE_MOCKS !== "true") return
+
+  const { worker } = await import("./mocks/browser")
+  await worker.start({ onUnhandledRequest: "bypass" })
+}
 const router = createRouter({
   routeTree,
   context: { queryClient },
@@ -19,11 +25,14 @@ declare module "@tanstack/react-router" {
   }
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <ReactQueryDevtools />
-    </QueryClientProvider>
-  </StrictMode>,
+enableMocking().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        <ReactQueryDevtools />
+      </QueryClientProvider>
+    </StrictMode>
+  )
+}
 )

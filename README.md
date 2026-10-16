@@ -181,6 +181,8 @@ Cada teste começa com `?reset`, então nenhum depende de outro e todos podem ro
 
 ## Estrutura
 
+Camadas, fluxo de dados, tempo real e decisões técnicas estão detalhados no [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ```
 e2e/              Testes E2E (Playwright)
 src/

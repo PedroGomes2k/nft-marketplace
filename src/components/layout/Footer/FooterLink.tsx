@@ -76,7 +76,7 @@ export function FooterLink() {
           </ul>
 
           <h2 className="mb-4 text-xl font-bold text-foreground">Carteiras compatíveis</h2>
-          <p className="inline-block whitespace-nowrap rounded-md border border-primary/40 bg-footer-band px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-primary">
+          <p className="inline-block rounded-md border border-primary/40 bg-footer-band lg:whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-primary">
             {wallets.join(" • ")}
           </p>
         </div>

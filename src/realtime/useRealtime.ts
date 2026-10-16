@@ -14,8 +14,14 @@ export function useRealtime() {
     void getSocket().then((socket) => {
       if (!active) return
 
-      const onConnect = () => console.info("[socket] conectado")
-      const onDisconnect = (reason: string) => console.info("[socket] desconectado:", reason)
+      const onConnect = () => {
+        document.documentElement.dataset.realtime = "connected"
+        console.info("[socket] conectado")
+      }
+      const onDisconnect = (reason: string) => {
+        document.documentElement.dataset.realtime = "disconnected"
+        console.info("[socket] desconectado:", reason)
+      }
       const onNftUpdated = (event: NftUpdatedEvent) => applyNftUpdated(queryClient, event)
 
       socket.on("connect", onConnect)

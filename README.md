@@ -21,7 +21,8 @@ Toda a "API" do projeto é simulada no próprio navegador com **MSW**: catálogo
 | Login, cadastro e sessão | 🚧 | Usuários e sessão já existem na API simulada; faltam as telas |
 | Pagamento, confirmação e pedidos | 🚧 | Rota criada; faltam formulário, pedido idempotente e `order.updated` |
 | Reconexão com reconciliação | 🚧 | Próximo passo do tempo real |
-| Testes E2E (Playwright) e Lighthouse | 🚧 | Dependências instaladas |
+| Testes E2E (Playwright) | ✅ | 25 cenários, rodados em desktop e celular: catálogo, detalhe, carrinho, tempo real, layout responsivo e regressão visual |
+| Relatório Lighthouse | 🚧 | Próximo passo |
 | Perfil, Carteiras e Favoritos | ⏸️ | Fora desta entrega; os botões aparecem como "Em breve" e não fingem funcionar |
 
 ---
@@ -38,6 +39,7 @@ Toda a "API" do projeto é simulada no próprio navegador com **MSW**: catálogo
 | **MSW** | API REST e servidor de tempo real simulados na camada de rede |
 | **Tailwind CSS v4 + shadcn/ui** | Estilo e componentes acessíveis (Radix), adaptados às cores do Figma |
 | **decimal.js** | Contas com valores em ETH sem erro de ponto flutuante |
+| **Playwright** | Testes E2E no navegador real, em desktop e celular, com regressão visual |
 | **Vite** | Build e servidor de desenvolvimento |
 
 ---
@@ -60,6 +62,10 @@ Abra `http://localhost:5173`. A API simulada liga sozinha.
 | `npm run preview` | Serve a versão de produção localmente |
 | `npm run typecheck` | Verificação de tipos do TypeScript |
 | `npm run lint` | ESLint |
+| `npm run test:e2e` | Testes E2E com Playwright (gera o build e sobe o servidor sozinho) |
+| `npm run test:e2e:ui` | Abre a interface do Playwright para ver os testes rodando |
+| `npm run test:e2e:update` | Recria as imagens de referência da regressão visual |
+| `npm run test:e2e:report` | Abre o relatório HTML da última execução |
 
 ### Variáveis de ambiente
 
@@ -142,9 +148,41 @@ Os comandos alteram o servidor simulado; o aviso chega à tela pelo socket, como
 
 ---
 
+## Testes E2E (Playwright)
+
+Os testes abrem o app de verdade num Chromium, sobre o build de produção (`npm run build` + `npm run preview`), com a mesma API simulada pelo MSW. Cada cenário roda duas vezes: **desktop** (1440 × 900) e **celular** (Pixel 7).
+
+### Primeira vez
+
+```bash
+npx playwright install chromium
+npm run test:e2e:update
+npm run test:e2e
+```
+
+O `test:e2e:update` cria as imagens de referência da regressão visual (`e2e/visual.spec.ts-snapshots/`). Elas devem ser commitadas. Se uma mudança no layout for intencional, rode o comando de novo e commite as novas imagens.
+
+### O que é testado
+
+| Arquivo | Cenários |
+|---|---|
+| `catalog.spec.ts` | Filtros combinados e ordenação na URL (refresh e "voltar"), paginação com refresh e histórico, troca de filtro voltando à página 1, busca só pelo teclado, resultado vazio com "limpar filtros", skeletons com API lenta, erro de servidor com "tentar novamente", falha de conexão |
+| `nft-detail.spec.ts` | Acesso direto pela URL, NFT inexistente, edição esgotada desabilitada, quantidade limitada ao estoque, rota 404 |
+| `cart.spec.ts` | Adicionar a partir do detalhe, cupom inválido, expirado e válido, totais, persistência após refresh, remoção, rollback da atualização otimista quando a API recusa |
+| `realtime.spec.ts` | Mudança de preço via Socket.IO com o NFT no carrinho (aviso, finalização bloqueada até aceitar), evento repetido ignorado, preço ao vivo no detalhe |
+| `layout.spec.ts` | Nenhuma página tem rolagem horizontal |
+| `visual.spec.ts` | Regressão visual de Início, Detalhe e Carrinho |
+
+Os eventos em tempo real são disparados pelo servidor simulado (`window.kurioMock`), nunca direto na tela. A interface só muda quando o evento chega pelo socket.
+
+Cada teste começa com `?reset`, então nenhum depende de outro e todos podem rodar em paralelo.
+
+---
+
 ## Estrutura
 
 ```
+e2e/              Testes E2E (Playwright)
 src/
 ├── api/          Chamadas HTTP (Axios), uma função por endpoint
 ├── queries/      Hooks do TanStack Query (cache, mutations, atualização otimista)

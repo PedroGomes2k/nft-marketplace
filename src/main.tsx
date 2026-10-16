@@ -1,38 +1,44 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { RouterProvider, createRouter } from "@tanstack/react-router"
+import { createQueryClient } from "./lib/query-client"
 import { routeTree } from "./routeTree.gen"
 import "./index.css"
 
-const queryClient = new QueryClient()
+const queryClient = createQueryClient()
 
 async function enableMocking() {
   if (import.meta.env.VITE_ENABLE_MOCKS !== "true") return
 
-  const { worker } = await import("./mocks/browser")
-  await worker.start({ onUnhandledRequest: "bypass" })
+  const { startMocks } = await import("./mocks/browser")
+  await startMocks()
 }
-const router = createRouter({
-  routeTree,
-  context: { queryClient },
-})
+
+function createAppRouter() {
+  return createRouter({
+    routeTree,
+    context: { queryClient },
+    scrollRestoration: true,
+  })
+}
 
 declare module "@tanstack/react-router" {
   interface Register {
-    router: typeof router
+    router: ReturnType<typeof createAppRouter>
   }
 }
 
+// O router só é criado depois do MSW, para ler a URL já limpa
 enableMocking().then(() => {
+  const router = createAppRouter()
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
         <ReactQueryDevtools />
       </QueryClientProvider>
-    </StrictMode>
+    </StrictMode>,
   )
-}
-)
+})

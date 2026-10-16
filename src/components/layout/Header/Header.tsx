@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link, useLocation } from "@tanstack/react-router"
-import { LogIn, Menu, Search, ShoppingCart } from "lucide-react"
+import { LogIn, Menu, ShoppingCart } from "lucide-react"
+import { SearchDialog } from "@/components/catalog/SearchDialog"
 import { Button } from "@/components/ui/button"
 import {
     Sheet,
@@ -9,6 +10,7 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
+import { useCart } from "@/queries/cart"
 
 const focusRing =
     "rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
@@ -71,7 +73,8 @@ function NavLinks({ orientation, onNavigate }: NavLinksProps) {
 
 export function Header() {
     const [menuOpen, setMenuOpen] = useState(false)
-    const cartCount = 0 // TODO: vai vir do useCart() quando o carrinho existir
+    const { data: cart } = useCart()
+    const cartCount = cart?.itemCount ?? 0
 
     return (
         <header className="border-b border-border">
@@ -88,9 +91,7 @@ export function Header() {
                 </nav>
 
                 <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" aria-label="Buscar">
-                        <Search />
-                    </Button>
+                    <SearchDialog />
 
                     <Button variant="ghost" size="icon" asChild>
                         <Link

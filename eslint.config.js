@@ -22,8 +22,6 @@ export default defineConfig([
     },
   },
   {
-    // Arquivos de rota exportam `Route` junto com o componente (padrão do TanStack Router)
-    // e os componentes do shadcn/ui são copiados como vieram da biblioteca.
     files: ['src/routes/**/*.tsx', 'src/components/ui/**/*.tsx'],
     rules: {
       'react-refresh/only-export-components': 'off',

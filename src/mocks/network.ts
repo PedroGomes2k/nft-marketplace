@@ -25,8 +25,6 @@ export async function simulateNetwork(request: Request): Promise<Response | unde
   if (scenario === "slow") {
     await delay(3000)
   } else if (scenario === "jitter") {
-    // Entre 0,2 s e 2 s, sempre igual para a mesma URL: dá para reproduzir
-    // respostas chegando fora de ordem trocando filtros rapidamente.
     await delay(200 + (stableHash(request.url) % 1800))
   } else {
     await delay()
@@ -34,6 +32,10 @@ export async function simulateNetwork(request: Request): Promise<Response | unde
 
   if (scenario === "offline") {
     return HttpResponse.error()
+  }
+
+  if (scenario === "write-error" && request.method !== "GET") {
+    return apiError(500, "INTERNAL_ERROR", "Não foi possível salvar a alteração. Tente novamente.")
   }
 
   if (scenario === "error") {

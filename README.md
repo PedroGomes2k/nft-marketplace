@@ -1,75 +1,194 @@
-# React + TypeScript + Vite
+# Kurio · Marketplace de NFTs
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Marketplace de NFTs feito em React + TypeScript para o **Desafio Frontend da Jungle Gaming**, seguindo o layout do Figma do projeto.
 
-Currently, two official plugins are available:
+Toda a "API" do projeto é simulada no próprio navegador com **MSW**: catálogo, carrinho, cupons e eventos em tempo real (Socket.IO) funcionam sem nenhum backend, inclusive na versão publicada.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Demo:** _adicione aqui a URL da Vercel depois do deploy_
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## O que já funciona
 
-## Expanding the ESLint configuration
+| Área | Status | Destaques |
+|---|---|---|
+| Catálogo (Início) | ✅ | Busca, filtros combináveis (coleção, rede, faixa de preço), abas, ordenação e paginação **na URL**: sobrevivem ao refresh e ao botão "voltar" |
+| Estados de carregamento | ✅ | Skeleton com shimmer (respeita "reduzir movimento"), tela vazia, erro com "tentar novamente" (diferencia falha de servidor e falta de conexão) |
+| Detalhe do NFT | ✅ | Galeria com zoom, edições (esgotadas desabilitadas), quantidade limitada ao estoque, NFT inexistente com tela própria |
+| Carrinho | ✅ | Quantidades com **atualização otimista e rollback**, remoção, cupom (válido, inválido e expirado), totais calculados com `decimal.js`, persistência após refresh |
+| Destaques e Diário da Cunhagem | ✅ | Os banners levam ao catálogo já filtrado; os artigos editoriais aparecem como "Em breve" |
+| Tempo real (`nft.updated`) | ✅ | Preço e estoque mudam ao vivo no catálogo, no detalhe e no carrinho; eventos repetidos ou antigos são ignorados; a finalização fica bloqueada até o usuário revisar os novos valores |
+| Login, cadastro e sessão | 🚧 | Usuários e sessão já existem na API simulada; faltam as telas |
+| Pagamento, confirmação e pedidos | 🚧 | Rota criada; faltam formulário, pedido idempotente e `order.updated` |
+| Reconexão com reconciliação | 🚧 | Próximo passo do tempo real |
+| Testes E2E (Playwright) e Lighthouse | 🚧 | Dependências instaladas |
+| Perfil, Carteiras e Favoritos | ⏸️ | Fora desta entrega; os botões aparecem como "Em breve" e não fingem funcionar |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Stack
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+| Tecnologia | Uso no projeto |
+|---|---|
+| **React 19 + TypeScript** | Interface, com contratos tipados entre API, cache e tela (`src/types`) |
+| **TanStack Router** | Rotas por arquivo, parâmetros de busca validados (`validateSearch`) e página 404 |
+| **TanStack Query** | Cache, estados de carregamento/erro, cancelamento de respostas antigas, mutations e atualização otimista |
+| **Axios** | Cliente HTTP único (`src/api/client.ts`), com interceptor que envia sessão e id do carrinho |
+| **Socket.IO** | Eventos em tempo real (`socket.io-client`), simulados com `@mswjs/socket.io-binding` |
+| **MSW** | API REST e servidor de tempo real simulados na camada de rede |
+| **Tailwind CSS v4 + shadcn/ui** | Estilo e componentes acessíveis (Radix), adaptados às cores do Figma |
+| **decimal.js** | Contas com valores em ETH sem erro de ponto flutuante |
+| **Vite** | Build e servidor de desenvolvimento |
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
 
+## Como rodar
+
+Pré-requisito: **Node.js 20.19 ou mais recente**.
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Abra `http://localhost:5173`. A API simulada liga sozinha.
+
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Desenvolvimento com a API simulada |
+| `npm run build` | Verifica os tipos e gera a versão de produção em `dist/` |
+| `npm run preview` | Serve a versão de produção localmente |
+| `npm run typecheck` | Verificação de tipos do TypeScript |
+| `npm run lint` | ESLint |
+
+### Variáveis de ambiente
+
+Nenhuma é obrigatória. Para mudar algo, copie `.env.example` para `.env`:
+
+| Variável | Padrão | Para que serve |
+|---|---|---|
+| `VITE_ENABLE_MOCKS` | `true` | `false` desliga o MSW (para usar um backend real) |
+| `VITE_REALTIME_URL` | `wss://realtime.kurio.mock` | Endereço do servidor Socket.IO |
+
+---
+
+## API simulada (MSW)
+
+O app faz requisições HTTP de verdade pelo Axios e não sabe que os dados são simulados. O MSW intercepta as chamadas na camada de rede (Service Worker). Nenhum componente ou hook contém dados fictícios.
+
+Os dados ficam num "banco" em memória (`src/mocks/db.ts`), salvo no `localStorage` para sobreviver ao refresh.
+
+### Endpoints
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/api/nfts` | Lista com `q`, `category`, `network`, `minPrice`, `maxPrice`, `tab`, `sort` e `page`. Devolve itens, paginação e contagens por filtro |
+| `GET` | `/api/nfts/:id` | Detalhe do NFT (`404` se não existir) |
+| `GET` | `/api/cart` | Carrinho com itens, totais e versão da cotação |
+| `POST` | `/api/cart/items` | Adiciona item (`409` se passar do estoque) |
+| `PATCH` | `/api/cart/items/:itemId` | Altera a quantidade |
+| `DELETE` | `/api/cart/items/:itemId` | Remove o item |
+| `POST` / `DELETE` | `/api/cart/coupon` | Aplica (`422` se inválido ou expirado) ou remove o cupom |
+| `POST` | `/api/cart/acknowledge` | Aceita as mudanças de preço/estoque dos itens |
+
+Erros seguem sempre o formato `{ code, message }`.
+
+O carrinho do visitante é identificado pelo header `X-Cart-Id`, gerado no navegador.
+
+### Cenários de teste
+
+Ative pela URL, por exemplo `http://localhost:5173/?scenario=slow`. O cenário fica salvo até ser trocado.
+
+| Cenário | Efeito |
+|---|---|
+| `default` | Latência curta e realista |
+| `slow` | 3 s em cada resposta (mostra os skeletons) |
+| `jitter` | Latência variável e determinística, para respostas fora de ordem |
+| `error` | HTTP 500 em todas as respostas |
+| `offline` | Falha de conexão |
+| `empty` | Catálogo sem resultados |
+| `write-error` | Só as alterações falham (mostra o rollback da atualização otimista) |
+
+**`?reset`** restaura os dados e o cenário iniciais.
+
+### Dados de teste
+
+- 24 NFTs em 9 coleções e 3 redes, com preços de 0.02 a 12.30 ETH
+- Cupons: `KURIO10` (10% de desconto) e `GENESIS5` (expirado)
+- Contas fictícias, já preparadas para o login: `ana@kurio.dev` e `bruno@kurio.dev`, ambas com senha `kurio123` (guardadas como hash, nunca em texto puro)
+
+---
+
+## Tempo real (Socket.IO)
+
+O cliente usa o `socket.io-client` de verdade. Quem responde é um servidor Socket.IO simulado pelo MSW (`src/mocks/handlers/realtime.ts`), que repassa os eventos publicados pela API simulada.
+
+Evento disponível: **`nft.updated`**, com identidade estável (`eventId`), recurso afetado (`resourceId`) e versão (`version`).
+
+- Evento repetido (mesmo `eventId`) é ignorado.
+- Evento antigo (versão menor ou igual à da tela) não altera nada.
+- Detalhe e catálogo são atualizados direto no cache; o carrinho é buscado de novo na API, porque totais e cotação são calculados lá.
+
+Para disparar eventos, use o console do navegador:
 
 ```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+kurioMock.raiseCartItemPrice()                        // +10% no preço de um NFT do carrinho
+kurioMock.changeNftPrice("emerald-ape-042", "1.49")   // muda o preço de um NFT
+kurioMock.changeStock("emerald-ape-042", "1/50", 0)   // esgota uma edição
+kurioMock.resendLastEvent()                           // reenvia o último evento (duplicata)
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Os comandos alteram o servidor simulado; o aviso chega à tela pelo socket, como chegaria de um servidor real.
+
+---
+
+## Estrutura
 
 ```
+src/
+├── api/          Chamadas HTTP (Axios), uma função por endpoint
+├── queries/      Hooks do TanStack Query (cache, mutations, atualização otimista)
+├── realtime/     Conexão Socket.IO e aplicação dos eventos no cache
+├── routes/       Páginas (rotas por arquivo do TanStack Router)
+├── components/   Componentes por área: catalog, nft, cart, home, layout, ui (shadcn)
+├── lib/          Utilitários: cálculo em ETH, validação dos filtros, armazenamento
+├── types/        Contratos tipados (NFT, carrinho, catálogo, sessão, eventos)
+└── mocks/        API simulada: banco, fixtures, handlers REST e Socket.IO, cenários
+```
+
+---
+
+## Decisões técnicas
+
+- **Estado na URL.** Busca, filtros, ordenação e página são parâmetros validados pelo TanStack Router. Mudar qualquer filtro volta para a página 1.
+- **A API filtra, não o componente.** O handler do MSW recebe a query string, filtra, ordena e pagina, como um backend real faria.
+- **Respostas fora de ordem.** Cada combinação de filtros tem sua própria chave de cache, e o `AbortSignal` cancela a requisição anterior.
+- **Valores em ETH como texto.** Preços trafegam como string decimal (`"1.19"`) e as contas usam `decimal.js`.
+- **Atualização otimista.** Alterar a quantidade no carrinho muda a tela na hora; se a API recusar, o valor volta e um aviso aparece. Cliques rápidos viram uma fila, enviada em ordem.
+- **Política de cache.** Dados ficam frescos por 30 s; erros `4xx` não são repetidos; falhas de rede e `5xx` são repetidas até 2 vezes; mutations nunca são repetidas sozinhas (`src/lib/query-client.ts`).
+- **Socket.IO carregado sob demanda.** O cliente é importado só depois que o MSW começa a interceptar o WebSocket. Se fosse carregado antes, a conexão escaparia da simulação. Bônus: ele sai do pacote inicial.
+- **Imagens.** Os PNGs do Figma (cerca de 2 MB cada) viraram WebP de 480 e 960 px (15 a 60 KB), servidos com `srcset`. A imagem principal é pré-carregada.
+
+### Desvios do Figma
+
+- A fonte do Figma está numa variável oculta; foi usada a **JetBrains Mono**, monoespaçada como a do layout.
+- As contagens das coleções vêm dos dados simulados, por isso são menores que as do Figma.
+- Na aba "Detalhes do NFT", o Figma troca os rótulos: o texto de royalties aparece em "Contrato" e o endereço do contrato em "Direitos autorais". Aqui cada informação está sob o rótulo certo.
+- O Figma chama a coleção de "Kurio Editions" na descrição e de "Kurio Apes" na ficha do NFT. Aqui o nome vem sempre do mesmo campo (`collection`).
+- O texto do banner "Arte digital selecionada e muito mais" está cortado no Figma ("...obras digitais que definem a"). Foi completado como "...que definem a cultura da internet".
+
+---
+
+## Deploy (Vercel)
+
+O projeto já tem `vercel.json` com o build e o redirecionamento das rotas para o `index.html`, para que acesso direto e refresh funcionem em qualquer página. Não é preciso configurar variáveis de ambiente.
+
+1. Envie o código para o GitHub.
+2. Em [vercel.com/new](https://vercel.com/new), importe o repositório. O preset **Vite** é detectado sozinho.
+3. Clique em **Deploy**. Cada novo `git push` publica uma nova versão.
+
+---
+
+## Uso de IA
+
+Este projeto foi desenvolvido com o Claude (Anthropic) como par de programação. A IA gerou parte do código e explicou as decisões técnicas; eu conduzi o escopo, revisei e testei cada etapa no navegador antes de commitar.

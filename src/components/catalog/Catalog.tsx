@@ -19,7 +19,6 @@ export function Catalog() {
   const { data, error, isPending, isError, isFetching, isPlaceholderData, refetch } =
     useNfts(search)
 
-  // Trocou o filtro: a lista anterior continua na tela, apagada, até a nova chegar
   const isUpdating = isFetching && isPlaceholderData
 
   return (

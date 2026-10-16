@@ -1,6 +1,7 @@
 import { setupWorker } from "msw/browser"
 import { handlers } from "./handlers"
 import { resetDb } from "./db"
+import { installMockControls } from "./market"
 import { initScenarioFromUrl, resetScenario } from "./scenario"
 
 export const worker = setupWorker(...handlers)
@@ -19,7 +20,6 @@ export async function startMocks() {
   }
   initScenarioFromUrl(params)
 
-  // Tira os parâmetros de controle da URL: um refresh não pode resetar os dados de novo
   if (params.has("reset") || params.has("scenario")) {
     params.delete("reset")
     params.delete("scenario")
@@ -28,5 +28,6 @@ export async function startMocks() {
     window.history.replaceState(window.history.state, "", url)
   }
 
+  installMockControls()
   await worker.start({ onUnhandledRequest: "bypass" })
 }

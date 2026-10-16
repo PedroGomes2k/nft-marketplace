@@ -18,7 +18,6 @@ export function useNfts(search: CatalogSearch) {
   return useQuery({
     queryKey: nftKeys.list(search),
     queryFn: ({ signal }) => fetchNfts(search, signal),
-    // Enquanto a nova página/filtro carrega, mantém a lista anterior na tela
     placeholderData: keepPreviousData,
   })
 }

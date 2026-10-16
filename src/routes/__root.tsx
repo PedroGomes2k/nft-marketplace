@@ -4,6 +4,8 @@ import type { QueryClient } from "@tanstack/react-query"
 import { Header } from "@/components/layout/Header/Header"
 import { Footer } from "@/components/layout/Footer/indexFooter"
 import { Button } from "@/components/ui/button"
+import { Toaster } from "@/components/ui/sonner"
+import { useRealtime } from "@/realtime/useRealtime"
 
 type RouterContext = {
   queryClient: QueryClient
@@ -15,6 +17,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootLayout() {
+  useRealtime()
+
   return (
     <div className="flex min-h-dvh flex-col">
       <a
@@ -28,7 +32,8 @@ function RootLayout() {
         <Outlet />
       </main>
       <Footer />
-      <TanStackRouterDevtools />
+      <Toaster theme="dark" position="bottom-right" closeButton />
+      <TanStackRouterDevtools position="bottom-right" />
     </div>
   )
 }

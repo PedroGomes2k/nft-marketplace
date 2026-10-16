@@ -10,7 +10,7 @@ import "./index.css"
 const queryClient = createQueryClient()
 
 async function enableMocking() {
-  if (import.meta.env.VITE_ENABLE_MOCKS !== "true") return
+  if (import.meta.env.VITE_ENABLE_MOCKS === "false") return
 
   const { startMocks } = await import("./mocks/browser")
   await startMocks()
@@ -30,7 +30,6 @@ declare module "@tanstack/react-router" {
   }
 }
 
-// O router só é criado depois do MSW, para ler a URL já limpa
 enableMocking().then(() => {
   const router = createAppRouter()
   createRoot(document.getElementById("root")!).render(

@@ -24,7 +24,6 @@ export function NftPurchasePanel({ nft }: { nft: NftDetail }) {
   const { data: cart } = useCart()
   const addToCart = useAddToCart()
 
-  // Como no Figma, a edição 1/50 vem selecionada quando tem estoque
   const firstAvailable = DEFAULT_EDITION_ORDER.find((candidate) =>
     nft.editions.some((stock) => stock.edition === candidate && stock.available > 0),
   )
@@ -88,7 +87,7 @@ export function NftPurchasePanel({ nft }: { nft: NftDetail }) {
       <hr className="my-5 border-border" />
 
       <h2 className="text-sm font-bold">Sobre este NFT:</h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{nft.description}</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{nft.summary}</p>
 
       <fieldset className="mt-6">
         <legend className="text-sm font-bold">Edição:</legend>

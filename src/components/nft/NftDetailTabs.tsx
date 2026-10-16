@@ -7,7 +7,7 @@ const trigger =
   "border-b-2 border-transparent pb-3 text-sm font-bold transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-ring data-[state=active]:border-primary data-[state=active]:text-primary"
 
 function shortAddress(address: string) {
-  return `${address.slice(0, 6)}…${address.slice(-4)}`.toUpperCase().replace("0X", "0x")
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
 export function NftDetailTabs({ nft }: { nft: NftDetail }) {
@@ -29,7 +29,9 @@ export function NftDetailTabs({ nft }: { nft: NftDetail }) {
         value="details"
         className="space-y-5 pt-6 text-sm leading-relaxed focus-visible:outline-2 focus-visible:outline-ring"
       >
-        <p>{nft.description}</p>
+        {nft.description.map((paragraph) => (
+          <p key={paragraph.slice(0, 40)}>{paragraph}</p>
+        ))}
         <dl className="space-y-4">
           <div>
             <dt className="font-bold">Rede:</dt>

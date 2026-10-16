@@ -1,7 +1,15 @@
 import { http, HttpResponse } from "msw"
 import { CATEGORIES, NETWORKS, PAGE_SIZE, parseCatalogSearch } from "@/lib/catalog"
 import type { CatalogSearch } from "@/types/catalog"
-import type { Nft, NftCategory, NftListResponse, NftNetwork } from "@/types/nft"
+import { NETWORK_LABELS } from "@/lib/catalog"
+import type {
+  Nft,
+  NftCategory,
+  NftDetail,
+  NftEdition,
+  NftListResponse,
+  NftNetwork,
+} from "@/types/nft"
 import { getDb } from "@/mocks/db"
 import { apiError, simulateNetwork } from "@/mocks/network"
 import { getScenario } from "@/mocks/scenario"
@@ -62,6 +70,63 @@ function priceRange(nfts: Nft[]) {
   return { min: prices[0] ?? "0", max: prices[prices.length - 1] ?? "0" }
 }
 
+function seed(text: string) {
+  let hash = 0
+  for (const char of text) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
+  return hash
+}
+
+const REVIEW_AUTHORS = ["Lia M.", "Caio R.", "Tomás V.", "Bia S."]
+const REVIEW_COMMENTS = [
+  "Arte impecável, os detalhes em alta resolução impressionam.",
+  "Compra tranquila e a procedência ficou registrada na hora.",
+  "Um dos meus favoritos da coleção. Vale cada ETH.",
+  "Acabamento lindo, ótimo para começar a colecionar.",
+]
+
+const COLLECTION_CREATOR = "Nova Sato"
+const COLLECTION_CONTRACT = "0x7A42f6C1d9E83b5A0c47D2e9B1f8a6C3e05D19E8"
+const EDITION_PREFERENCE: NftEdition[] = ["1/50", "1/10", "aberta", "1/1"]
+
+/** Informações da página de detalhe, geradas de forma determinística a partir do NFT */
+function toDetail(nft: Nft): NftDetail {
+  const base = seed(nft.id)
+  const network = NETWORK_LABELS[nft.network]
+  const royaltyPercent = 5
+  const edition =
+    EDITION_PREFERENCE.find((candidate) =>
+      nft.editions.some((stock) => stock.edition === candidate && stock.available > 0),
+    ) ?? "1/1"
+  const editionText = edition === "aberta" ? "de edição aberta" : edition
+
+  return {
+    ...nft,
+    summary:
+      `Um colecionável digital finalizado à mão da coleção ${nft.collection}, ` +
+      `verificado na ${network}, com arte desbloqueável e acesso para colecionadores.`,
+    description: [
+      `${nft.name} é uma obra digital ${editionText} finalizada à mão da coleção ${nft.collection}. ` +
+        `Cada atributo fica armazenado nos metadados do token e verificado na ${network}. ` +
+        `A obra explora identidade, movimento e luz em um mundo digital sem fronteiras.`,
+      `A propriedade inclui a arte em alta resolução, lançamentos exclusivos para colecionadores ` +
+        `e um registro permanente de procedência registrada na rede. ${COLLECTION_CREATOR} recebe ` +
+        `${royaltyPercent}% de direitos autorais nas vendas secundárias, apoiando novos trabalhos ` +
+        `e lançamentos da comunidade.`,
+    ],
+    creator: COLLECTION_CREATOR,
+    contractAddress: COLLECTION_CONTRACT,
+    royaltyPercent,
+    rating: { average: 4.8, count: 19 },
+    reviews: [0, 1, 2].map((index) => ({
+      id: `${nft.id}-review-${index}`,
+      author: REVIEW_AUTHORS[(base + index) % REVIEW_AUTHORS.length],
+      rating: 5 - ((base + index) % 2),
+      comment: REVIEW_COMMENTS[(base + index) % REVIEW_COMMENTS.length],
+      createdAt: `2026-10-${String(10 - index).padStart(2, "0")}`,
+    })),
+  }
+}
+
 export const nftHandlers = [
   http.get("/api/nfts", async ({ request }) => {
     const failure = await simulateNetwork(request)
@@ -89,7 +154,6 @@ export const nftHandlers = [
       total,
       totalPages,
       facets: {
-        // Cada contagem considera os outros filtros ativos, menos o próprio
         categories: countBy<NftCategory>(
           CATEGORIES,
           all.filter((nft) => matches(nft, search, cutoff, "category")),
@@ -116,6 +180,6 @@ export const nftHandlers = [
       return apiError(404, "NFT_NOT_FOUND", "Este NFT não existe ou foi removido.")
     }
 
-    return HttpResponse.json(nft)
+    return HttpResponse.json(toDetail(nft))
   }),
 ]

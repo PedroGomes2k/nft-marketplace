@@ -3,15 +3,24 @@
  * O cenário fica salvo até ser trocado (ou até `?reset`).
  */
 export type MockScenario =
-  | "default" // latência realista curta
-  | "slow" // 3 s em toda resposta (mostra os skeletons)
-  | "jitter" // latência variável e determinística: respostas fora de ordem
-  | "error" // HTTP 500 em toda resposta
-  | "offline" // falha de conexão (a requisição nem chega)
-  | "empty" // catálogo sem resultados
+  | "default"
+  | "slow"
+  | "jitter"
+  | "error"
+  | "offline"
+  | "empty"
+  | "write-error"
 
 const STORAGE_KEY = "kurio:mock-scenario"
-const VALID: MockScenario[] = ["default", "slow", "jitter", "error", "offline", "empty"]
+const VALID: MockScenario[] = [
+  "default",
+  "slow",
+  "jitter",
+  "error",
+  "offline",
+  "empty",
+  "write-error",
+]
 
 function isScenario(value: string | null): value is MockScenario {
   return value !== null && VALID.includes(value as MockScenario)
@@ -22,8 +31,8 @@ export function initScenarioFromUrl(params: URLSearchParams) {
   if (isScenario(fromUrl)) {
     try {
       localStorage.setItem(STORAGE_KEY, fromUrl)
-    } catch {
-      // sem localStorage o cenário vale só para esta página
+    } catch (error) {
+      console.warn("[mock] não foi possível salvar o cenário", error)
     }
   }
 }
@@ -31,8 +40,8 @@ export function initScenarioFromUrl(params: URLSearchParams) {
 export function resetScenario() {
   try {
     localStorage.removeItem(STORAGE_KEY)
-  } catch {
-    // nada para limpar
+  } catch (error) {
+    console.warn("[mock] não foi possível limpar o cenário", error)
   }
 }
 

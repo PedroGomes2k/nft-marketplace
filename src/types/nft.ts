@@ -54,3 +54,24 @@ export interface NftListResponse {
   totalPages: number
   facets: NftListFacets
 }
+
+export interface NftReview {
+  id: string
+  author: string
+  rating: number
+  comment: string
+  createdAt: string
+}
+
+/** Resposta do detalhe: o NFT do catálogo mais as informações da página */
+export interface NftDetail extends Nft {
+  /** Texto curto de "Sobre este NFT" */
+  summary: string
+  /** Parágrafos da aba "Detalhes do NFT" */
+  description: string[]
+  creator: string
+  contractAddress: string
+  royaltyPercent: number
+  rating: { average: number; count: number }
+  reviews: NftReview[]
+}
